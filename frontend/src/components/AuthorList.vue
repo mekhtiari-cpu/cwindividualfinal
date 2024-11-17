@@ -88,7 +88,7 @@
           .then((response) => response.json())
           .then((data) => {
             const index = this.authors.findIndex(a => a.id === data.id);
-            this.$set(this.authors, index, data);
+            this.authors[index] = data;
             this.closeModal();
           });
       },

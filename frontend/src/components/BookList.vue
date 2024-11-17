@@ -7,7 +7,7 @@
           :key="book.id"
           class="list-group-item d-flex justify-content-between align-items-center"
         >
-          {{ book.title }} - {{ book.isFiction ? "Fiction" : "Non-Fiction" }}
+          {{ book.title }} - {{ book.is_fiction ? "Fiction" : "Non-Fiction" }}
           <div>
             <button @click="editBook(book)" class="btn btn-primary btn-sm">Edit</button>
             <button @click="deleteBook(book.id)" class="btn btn-danger btn-sm">Delete</button>
@@ -28,7 +28,7 @@
               <input v-model="bookForm.title" type="text" class="form-control" placeholder="Book Title" />
               <textarea v-model="bookForm.blurb" class="form-control mt-2" placeholder="Blurb"></textarea>
               <div class="form-check mt-2">
-                <input type="checkbox" class="form-check-input" v-model="bookForm.isFiction" />
+                <input type="checkbox" class="form-check-input" v-model="bookForm.is_fiction" />
                 <label class="form-check-label">Fiction</label>
               </div>
             </div>
@@ -53,7 +53,7 @@
           id: null,
           title: '',
           blurb: '',
-          isFiction: false,
+          is_fiction: false,
         },
       };
     },
@@ -97,7 +97,7 @@
           .then((response) => response.json())
           .then((data) => {
             const index = this.books.findIndex((b) => b.id === data.id);
-            this.$set(this.books, index, data);
+            this.books[index] = data;
             this.closeModal();
           });
       },
@@ -109,7 +109,7 @@
       closeModal() {
         this.showAddModal = false;
         this.showEditModal = false;
-        this.bookForm = { id: null, title: '', blurb: '', isFiction: false };
+        this.bookForm = { id: null, title: '', blurb: '', is_fiction: false };
       },
     },
     mounted() {

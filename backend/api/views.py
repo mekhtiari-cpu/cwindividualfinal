@@ -18,18 +18,20 @@ from .models import Author, Book, AuthorBook
 
 @csrf_exempt
 def author_view(request, author_id=None):
+    """Handle operations related to authors, including retrieving, 
+    creating, updating, and deleting authors."""
     if request.method == 'GET':
         if author_id:
             author = get_object_or_404(Author, id=author_id)
             response_data = {
                 'id': author.id,
                 'name': author.name,
-                'birthdate': author.birthdate.isoformat()
+                'birthdate': author.birthdate,
             }
         else:
             authors = Author.objects.all()
             response_data = [
-                {'id': author.id, 'name': author.name, 'birthdate': author.birthdate.isoformat()}
+                {'id': author.id, 'name': author.name, 'birthdate': author.birthdate,}
                 for author in authors
             ]
         return JsonResponse(response_data, safe=False)
@@ -64,7 +66,7 @@ def author_view(request, author_id=None):
             author.name = data.get('name', author.name)
             author.birthdate = data.get('birthdate', author.birthdate)
             author.save()
-            return JsonResponse({'id': author.id, 'name': author.name, 'birthdate': author.birthdate.isoformat()})
+            return JsonResponse({'id': author.id, 'name': author.name, 'birthdate': author.birthdate})
         except (json.JSONDecodeError, KeyError, TypeError):
             return HttpResponseBadRequest("Invalid data format")
 
@@ -79,6 +81,8 @@ def author_view(request, author_id=None):
 
 @csrf_exempt
 def book_view(request, book_id=None):
+    """Handle operations related to books, including retrieving,
+    creating, updating, and deleting books."""
     if request.method == 'GET':
         if book_id:
             book = get_object_or_404(Book, id=book_id)
@@ -86,12 +90,12 @@ def book_view(request, book_id=None):
                 'id': book.id,
                 'title': book.title,
                 'blurb': book.blurb,
-                'isFiction': book.isFiction
+                'is_fiction': book.is_fiction
             }
         else:
             books = Book.objects.all()
             response_data = [
-                {'id': book.id, 'title': book.title, 'blurb': book.blurb, 'isFiction': book.isFiction}
+                {'id': book.id, 'title': book.title, 'blurb': book.blurb, 'is_fiction': book.is_fiction}
                 for book in books
             ]
         return JsonResponse(response_data, safe=False)
@@ -102,9 +106,9 @@ def book_view(request, book_id=None):
             book = Book.objects.create(
                 title=data.get('title'),
                 blurb=data.get('blurb'),
-                isFiction=data.get('isFiction', False)
+                is_fiction=data.get('is_fiction', False)
             )
-            return JsonResponse({'id': book.id, 'title': book.title, 'blurb': book.blurb, 'isFiction': book.isFiction}, status=201)
+            return JsonResponse({'id': book.id, 'title': book.title, 'blurb': book.blurb, 'is_fiction': book.is_fiction}, status=201)
         except (json.JSONDecodeError, KeyError, TypeError):
             return HttpResponseBadRequest("Invalid data format")
 
@@ -114,9 +118,9 @@ def book_view(request, book_id=None):
             book = get_object_or_404(Book, id=book_id)
             book.title = data.get('title', book.title)
             book.blurb = data.get('blurb', book.blurb)
-            book.isFiction = data.get('isFiction', book.isFiction)
+            book.is_fiction = data.get('is_fiction', book.is_fiction)
             book.save()
-            return JsonResponse({'id': book.id, 'title': book.title, 'blurb': book.blurb, 'isFiction': book.isFiction})
+            return JsonResponse({'id': book.id, 'title': book.title, 'blurb': book.blurb, 'is_fiction': book.is_fiction})
         except (json.JSONDecodeError, KeyError, TypeError):
             return HttpResponseBadRequest("Invalid data format")
 
@@ -131,6 +135,7 @@ def book_view(request, book_id=None):
 
 @csrf_exempt
 def author_book_view(request):
+    """Handle operations related to the relationship between authors and books."""
     if request.method == 'GET':
         # Logic to retrieve all author-book relationships
         relationships = AuthorBook.objects.all()
