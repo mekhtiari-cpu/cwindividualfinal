@@ -32,6 +32,8 @@
   import AuthorList from './components/AuthorList.vue';
   import BookList from './components/BookList.vue';
   import AuthorBookList from './components/AuthorBookList.vue';
+import BookModal from './components/BookModal.vue';
+import BookItem from './components/BookItem.vue';
   
   export default {
     data() {

@@ -134,10 +134,10 @@ def book_view(request, book_id=None):
 
 
 @csrf_exempt
-def author_book_view(request):
+def author_book_view(request, relationship_id=None):
     """Handle operations related to the relationship between authors and books."""
     if request.method == 'GET':
-        # Logic to retrieve all author-book relationships
+        # Retrieve all author-book relationships
         relationships = AuthorBook.objects.all()
         response_data = [
             {
@@ -149,8 +149,8 @@ def author_book_view(request):
             for rel in relationships
         ]
         return JsonResponse(response_data, safe=False)
-    
-    if request.method == 'POST':
+
+    elif request.method == 'POST':
         try:
             data = json.loads(request.body)
             author = get_object_or_404(Author, id=data.get('author_id'))
@@ -172,6 +172,32 @@ def author_book_view(request):
         except (json.JSONDecodeError, KeyError, TypeError):
             return HttpResponseBadRequest("Invalid data format")
 
+    elif request.method == 'PUT' and relationship_id:
+        try:
+            data = json.loads(request.body)
+            relationship = get_object_or_404(AuthorBook, id=relationship_id)
+            
+            # Retrieve new author and book if provided
+            author = get_object_or_404(Author, id=data.get('author_id')) if 'author_id' in data else relationship.author
+            book = get_object_or_404(Book, id=data.get('book_id')) if 'book_id' in data else relationship.book
+            contribution = data.get('contribution', relationship.contribution)
+
+            # Update the relationship
+            relationship.author = author
+            relationship.book = book
+            relationship.contribution = contribution
+            relationship.save()
+
+            response_data = {
+                'id': relationship.id,
+                'author': relationship.author.name,
+                'book': relationship.book.title,
+                'contribution': relationship.contribution
+            }
+            return JsonResponse(response_data, status=200)
+        except (json.JSONDecodeError, KeyError, TypeError):
+            return HttpResponseBadRequest("Invalid data format")
+
     elif request.method == 'DELETE':
         try:
             data = json.loads(request.body)
@@ -185,4 +211,4 @@ def author_book_view(request):
             return HttpResponseBadRequest("Invalid data format")
 
     else:
-        return HttpResponseNotAllowed(['GET', 'POST', 'DELETE'])
+        return HttpResponseNotAllowed(['GET', 'POST', 'PUT', 'DELETE'])

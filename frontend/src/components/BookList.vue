@@ -1,120 +1,145 @@
 <template>
-    <div>
-      <h3>Books</h3>
-      <ul class="list-group">
-        <li
-          v-for="book in books"
-          :key="book.id"
-          class="list-group-item d-flex justify-content-between align-items-center"
-        >
-          {{ book.title }} - {{ book.is_fiction ? "Fiction" : "Non-Fiction" }}
-          <div>
-            <button @click="editBook(book)" class="btn btn-primary btn-sm">Edit</button>
-            <button @click="deleteBook(book.id)" class="btn btn-danger btn-sm">Delete</button>
-          </div>
-        </li>
-      </ul>
-      <button @click="showAddModal = true" class="btn btn-success mt-3">Add Book</button>
-  
-      <!-- Add/Edit Book Modal -->
-      <div v-if="showAddModal || showEditModal" class="modal show" tabindex="-1" style="display: block;">
-        <div class="modal-dialog">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title">{{ showEditModal ? "Edit Book" : "Add Book" }}</h5>
-              <button type="button" class="btn-close" @click="closeModal"></button>
-            </div>
-            <div class="modal-body">
-              <input v-model="bookForm.title" type="text" class="form-control" placeholder="Book Title" />
-              <textarea v-model="bookForm.blurb" class="form-control mt-2" placeholder="Blurb"></textarea>
-              <div class="form-check mt-2">
-                <input type="checkbox" class="form-check-input" v-model="bookForm.is_fiction" />
-                <label class="form-check-label">Fiction</label>
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" @click="closeModal">Close</button>
-              <button type="button" class="btn btn-primary" @click="submitForm">{{ showEditModal ? "Update" : "Add" }}</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </template>
-  
-  <script>
-  export default {
-    data() {
-      return {
-        books: [],
-        showAddModal: false,
-        showEditModal: false,
-        bookForm: {
-          id: null,
-          title: '',
-          blurb: '',
-          is_fiction: false,
-        },
-      };
-    },
-    methods: {
-      fetchBooks() {
-        fetch('/api/books/')
-          .then((response) => response.json())
-          .then((data) => {
-            this.books = data;
-          });
+  <div>
+    <h3>Books</h3>
+    <ul class="list-group">
+      <!-- Loop through books and display them -->
+      <book-item
+        v-for="book in books"
+        :key="book.id"
+        :book="book"
+        @edit="editBook"
+        @delete="deleteBook"
+      ></book-item>
+    </ul>
+    <button @click="showAddModal = true" class="btn btn-success mt-3">Add Book</button>
+
+    <!-- Add/Edit Book Modal -->
+    <book-modal
+      v-if="showAddModal || showEditModal"
+      :is-edit="showEditModal"
+      :initial-form="bookForm"
+      @close="closeModal"
+      @submit="submitForm"
+    ></book-modal>
+  </div>
+</template>
+
+<script>
+import BookItem from './BookItem.vue';
+import BookModal from './BookModal.vue';
+
+export default {
+  components: { BookItem, BookModal },
+  data() {
+    return {
+      books: [], // Holds the list of books
+      showAddModal: false, // Controls the Add modal visibility
+      showEditModal: false, // Controls the Edit modal visibility
+      bookForm: {
+        id: null,
+        title: '',
+        blurb: '',
+        is_fiction: false,
       },
-      submitForm() {
-        if (this.showEditModal) {
-          this.updateBook();
-        } else {
-          this.addBook();
-        }
-      },
-      addBook() {
-        fetch('/api/books/', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(this.bookForm),
+    };
+  },
+  methods: {
+    // Fetch all books from the server
+    fetchBooks() {
+      fetch('/api/books/')
+        .then((response) => response.json())
+        .then((data) => {
+          this.books = data; // Populate the books array with the fetched data
         })
-          .then((response) => response.json())
-          .then((data) => {
-            this.books.push(data);
-            this.closeModal();
-          });
-      },
-      editBook(book) {
-        this.showEditModal = true;
-        this.bookForm = { ...book };
-      },
-      updateBook() {
-        fetch(`/api/books/${this.bookForm.id}/`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(this.bookForm),
-        })
-          .then((response) => response.json())
-          .then((data) => {
-            const index = this.books.findIndex((b) => b.id === data.id);
-            this.books[index] = data;
-            this.closeModal();
-          });
-      },
-      deleteBook(id) {
-        fetch(`/api/books/${id}/`, { method: 'DELETE' }).then(() => {
-          this.books = this.books.filter((book) => book.id !== id);
+        .catch((error) => {
+          console.error("Failed to fetch books:", error);
         });
-      },
-      closeModal() {
-        this.showAddModal = false;
-        this.showEditModal = false;
-        this.bookForm = { id: null, title: '', blurb: '', is_fiction: false };
-      },
     },
-    mounted() {
-      this.fetchBooks();
+    // Handle form submission for adding or updating a book
+    submitForm(form) {
+      if (this.showEditModal) {
+        this.updateBook(form);
+      } else {
+        this.addBook(form);
+      }
     },
-  };
-  </script>
+    // Add a new book to the server
+    addBook(form) {
+      fetch('/api/books/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form), // Use the passed form object
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Failed to add book");
+          }
+          return response.json();
+        })
+        .then((data) => {
+          this.books.push(data); // Add the new book to the list
+          this.closeModal(); // Close the modal
+        })
+        .catch((error) => {
+          console.error("Error adding book:", error);
+          alert("An error occurred while adding the book.");
+        });
+    },
+    // Edit an existing book (populate the form with the book's data)
+    editBook(book) {
+      this.showEditModal = true;
+      this.bookForm = { ...book }; // Clone the book data into the form
+    },
+    // Update an existing book on the server
+    updateBook(form) {
+      fetch(`/api/books/${form.id}/`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Failed to update book");
+          }
+          return response.json();
+        })
+        .then((data) => {
+          const index = this.books.findIndex((b) => b.id === data.id);
+          if (index !== -1) {
+            this.books[index] = data; // Update the book in the list
+          }
+          this.closeModal(); // Close the modal
+        })
+        .catch((error) => {
+          console.error("Error updating book:", error);
+          alert("An error occurred while updating the book.");
+        });
+    },
+    // Delete a book from the server
+    deleteBook(id) {
+      fetch(`/api/books/${id}/`, { method: 'DELETE' })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Failed to delete book");
+          }
+          this.books = this.books.filter((book) => book.id !== id); // Remove the book from the list
+        })
+        .catch((error) => {
+          console.error("Error deleting book:", error);
+          alert("An error occurred while deleting the book.");
+        });
+    },
+    // Close the Add/Edit modal and reset the form
+    closeModal() {
+      this.showAddModal = false;
+      this.showEditModal = false;
+      this.bookForm = { id: null, title: '', blurb: '', is_fiction: false }; // Reset the form
+    },
+  },
+  mounted() {
+    this.fetchBooks(); // Fetch books when the component is mounted
+  },
+};
+</script>
+
   
