@@ -146,11 +146,23 @@ export default {
           this.closeModal();
         });
     },
+
     deleteRelation(id) {
-      fetch(`/api/author-book/${id}/`, { method: 'DELETE' }).then(() => {
-        this.relationships = this.relationships.filter((rel) => rel.id !== id);
-      });
+      fetch(`/api/author-book/${id}/`, {
+        method: 'DELETE',
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error('Failed to delete relationship');
+          }
+          this.relationships = this.relationships.filter((rel) => rel.id !== id);
+        })
+        .catch((error) => {
+          console.error('Error deleting relationship:', error);
+          alert('Failed to delete relationship.');
+        });
     },
+
     closeModal() {
       this.showAddModal = false;
       this.showEditModal = false;

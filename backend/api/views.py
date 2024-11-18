@@ -38,16 +38,13 @@ def author_view(request, author_id=None):
 
     elif request.method == 'POST':
         try:
-            # Parse the JSON payload
             data = json.loads(request.body)
 
-            # Create the author object
             author = Author.objects.create(
                 name=data.get('name'),
-                birthdate=data.get('birthdate')  # Ensure valid format from frontend
+                birthdate=data.get('birthdate') 
             )
 
-            # Return the newly created author object
             return JsonResponse({
                 'id': author.id,
                 'name': author.name,
@@ -55,7 +52,6 @@ def author_view(request, author_id=None):
             }, status=201)
 
         except (json.JSONDecodeError, KeyError, TypeError, ValueError) as e:
-            # Handle JSON, missing keys, or invalid data types
             return HttpResponseBadRequest("Invalid data format")
 
 
@@ -137,7 +133,7 @@ def book_view(request, book_id=None):
 def author_book_view(request, relationship_id=None):
     """Handle operations related to the relationship between authors and books."""
     if request.method == 'GET':
-        # Retrieve all author-book relationships
+        # get author-book relationships
         relationships = AuthorBook.objects.all()
         response_data = [
             {
@@ -177,12 +173,10 @@ def author_book_view(request, relationship_id=None):
             data = json.loads(request.body)
             relationship = get_object_or_404(AuthorBook, id=relationship_id)
             
-            # Retrieve new author and book if provided
             author = get_object_or_404(Author, id=data.get('author_id')) if 'author_id' in data else relationship.author
             book = get_object_or_404(Book, id=data.get('book_id')) if 'book_id' in data else relationship.book
             contribution = data.get('contribution', relationship.contribution)
 
-            # Update the relationship
             relationship.author = author
             relationship.book = book
             relationship.contribution = contribution
@@ -197,7 +191,21 @@ def author_book_view(request, relationship_id=None):
             return JsonResponse(response_data, status=200)
         except (json.JSONDecodeError, KeyError, TypeError):
             return HttpResponseBadRequest("Invalid data format")
+        
+    elif request.method == 'DELETE' and relationship_id:
+        try:
+            # Retrieve the AuthorBook relationship by ID
+            author_book = get_object_or_404(AuthorBook, id=relationship_id)
+            author_book.delete()
+            return JsonResponse({'message': 'Author-Book relation deleted'}, status=204)
+        except Exception as e:
+            return HttpResponseBadRequest(f"Error deleting relationship: {str(e)}")
+    else:
+        return HttpResponseNotAllowed(['GET', 'POST', 'PUT', 'DELETE'])
 
+        
+        
+"""
     elif request.method == 'DELETE':
         try:
             data = json.loads(request.body)
@@ -212,3 +220,4 @@ def author_book_view(request, relationship_id=None):
 
     else:
         return HttpResponseNotAllowed(['GET', 'POST', 'PUT', 'DELETE'])
+        """

@@ -43,7 +43,7 @@
     },
     methods: {
       submitForm() {
-        this.$emit('submit', this.form); // Emits the form data to the parent
+        this.$emit('submit', this.form); 
       },
     },
   };
